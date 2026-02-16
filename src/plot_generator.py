@@ -41,8 +41,19 @@ def load_and_prepare_data(csv_path, date_col='Date', value_col='Value'):
     df = pd.read_csv(csv_path)
     logger.info(f"✅ Loaded {len(df)} records")
     
-    # Convert date column to datetime
-    df[date_col] = pd.to_datetime(df[date_col], format='%d.%m.%Y', errors='coerce')
+    # Try multiple date formats
+    date_formats = ['%d.%m.%Y', '%m/%d/%Y', '%Y-%m-%d', '%d/%m/%Y']
+    df[date_col] = None
+    
+    for fmt in date_formats:
+        try:
+            df[date_col] = pd.to_datetime(df['Date'].astype(str), format=fmt, errors='coerce')
+            # Check if we got valid dates
+            if df[date_col].notna().sum() > 0:
+                logger.info(f"✅ Successfully parsed dates using format: {fmt}")
+                break
+        except:
+            continue
     
     # Remove rows with invalid dates
     df = df.dropna(subset=[date_col])
@@ -96,6 +107,24 @@ def create_wci_scfi_chart():
     # Format x-axis
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.xaxis.set_major_locator(mdates.MonthLocator())
+    
+    # Get the last dates and always show them
+    all_dates = pd.concat([wci_df['Date'], scfi_df['Date']]).sort_values()
+    if len(all_dates) > 0:
+        last_date = all_dates.iloc[-1]
+        
+        # Get current tick locations
+        current_ticks = list(ax.get_xticks())
+        
+        # Convert last_date to matplotlib date number
+        last_date_num = mdates.date2num(last_date)
+        
+        # Add last date to ticks if not already there
+        if last_date_num not in current_ticks:
+            current_ticks.append(last_date_num)
+            current_ticks.sort()
+            ax.set_xticks(current_ticks)
+    
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
     # Title and subtitle
