@@ -173,7 +173,7 @@ def generate_table_rows():
             continue
         
         # Format values
-        value_str = f"${current_value:,.2f}"
+        value_str = f"${current_value:,.0f}"  # No decimal places
         date_str = current_date.strftime('%b %d, %Y')
         
         week_str, week_class = format_change(week_change)
