@@ -2,7 +2,253 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="w<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Freight Indices Newsletter</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #0E2841;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0E2841 0%, #1a4d6d 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header .subtitle {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        .header .date {
+            margin: 15px 0 0 0;
+            font-size: 13px;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0E2841;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0E2841;
+        }
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .data-table th {
+            background-color: #0E2841;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #0E2841;
+        }
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        .index-name {
+            font-weight: 700;
+            color: #0E2841;
+        }
+        .price {
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            font-weight: 700;
+            color: #0E2841;
+        }
+        .change-positive {
+            color: #059669 !important;
+            font-weight: 700;
+        }
+        .change-negative {
+            color: #dc2626 !important;
+            font-weight: 700;
+        }
+        .change-neutral {
+            color: #0E2841 !important;
+            font-weight: 700;
+        }
+        .arrow {
+            font-size: 18px;
+            margin-right: 6px;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #0E2841;
+            border-top: 1px solid #e5e7eb;
+            line-height: 1.8;
+        }
+        .footer-title {
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+        .footer p {
+            margin: 8px 0;
+        }
+        .footer-section {
+            margin: 15px 0;
+        }
+        .footer a {
+            color: #0E2841;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .header {
+                padding: 20px 15px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .content {
+                padding: 20px 15px;
+            }
+            .data-table {
+                font-size: 12px;
+            }
+            .data-table th,
+            .data-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Weekly Freight Indices Newsletter</h1>
+            <p class="subtitle">WCI, SCFI & IACI Market Report</p>
+            <p class="date">{{DATE}}</p>
+        </div>
+        
+        <div class="content">
+            <!-- WCI/SCFI Chart Section -->
+            <div class="section">
+                <h2 class="section-title">Drewry World Container Index (WCI) vs. Shanghai Containerized Freight Index (SCFI)</h2>
+                <div class="chart-container">
+                    <img src="cid:chart_wci_scfi" alt="WCI vs SCFI Chart">
+                </div>
+            </div>
+            
+            <!-- IACI Chart Section -->
+            <div class="section">
+                <h2 class="section-title">Drewry Intra-Asia Container Index (IACI)</h2>
+                <div class="chart-container">
+                    <img src="cid:chart_iaci" alt="IACI Chart">
+                </div>
+            </div>
+            
+            <!-- Weekly Performance Table -->
+            <div class="section">
+                <h2 class="section-title">Weekly Performance Summary</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Index</th>
+                            <th style="text-align: right;">Current Value</th>
+                            <th style="text-align: right;">Week Change</th>
+                            <th style="text-align: right;">YoY Change</th>
+                            <th>Latest Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{TABLE_ROWS}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-title">Freight Indices Newsletter © 2026</div>
+            
+            <div class="footer-section">
+                <strong>Data Sources:</strong> Drewry (WCI, IACI), Shanghai Shipping Exchange (SCFI)<br>
+                All data is sourced from publicly available information. No paid licenses or proprietary databases were accessed in violation of terms of service.
+            </div>
+            
+            <div class="footer-section">
+                <strong>Signal Definitions:</strong><br>
+                <span style="color: #059669;">▲ Green Triangle:</span> Weekly change > +1.0%<br>
+                <span style="color: #dc2626;">▼ Red Triangle:</span> Weekly change < -1.0%<br>
+                <span style="color: #0E2841;">● Blue Circle:</span> Weekly change between -1.0% and +1.0% (stable)
+            </div>
+            
+            <div class="footer-section">
+                <strong>Disclaimer:</strong> This newsletter is for informational purposes only. Data may contain errors or delays. Not financial advice.
+            </div>
+            
+            <div class="footer-section">
+                <strong>Unsubscribe:</strong> <a href="mailto:doisnews@gmail.com">doisnews@gmail.com</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>idth=device-width, initial-scale=1.0">
     <title>Weekly Freight Indices Newsletter</title>
     <style>
         body {
