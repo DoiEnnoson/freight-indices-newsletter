@@ -34,6 +34,7 @@ CHART_WCI_SCFI = OUTPUT_DIR / 'wci_scfi' / 'wci_scfi_chart.png'
 CHART_IACI = OUTPUT_DIR / 'iaci' / 'iaci_chart.png'
 HTML_TEMPLATE = BASE_DIR / 'html_template.html'
 OUTPUT_HTML = BASE_DIR / 'newsletter.html'
+SUBSCRIBERS_CSV = BASE_DIR / 'subscribers.csv'
 
 # Threshold for change direction
 THRESHOLD_NEUTRAL = 1.0  # ±1.0% = stable
@@ -56,6 +57,34 @@ def parse_email_config():
         "smtp_server": parts[2],
         "smtp_port": int(parts[3])
     }
+
+
+def load_subscribers():
+    """Load subscriber email addresses from CSV."""
+    if not SUBSCRIBERS_CSV.exists():
+        logger.warning(f"⚠️ Subscribers file not found: {SUBSCRIBERS_CSV}")
+        logger.warning("⚠️ Create subscribers.csv with 'email' column")
+        return []
+    
+    try:
+        df = pd.read_csv(SUBSCRIBERS_CSV)
+        
+        if 'email' not in df.columns:
+            logger.error("❌ subscribers.csv must have 'email' column")
+            return []
+        
+        # Remove empty emails and duplicates
+        emails = df['email'].dropna().str.strip().unique().tolist()
+        
+        logger.info(f"✅ Loaded {len(emails)} subscriber(s)")
+        for email in emails:
+            logger.info(f"   📧 {email}")
+        
+        return emails
+        
+    except Exception as e:
+        logger.error(f"❌ Error loading subscribers: {str(e)}")
+        return []
 
 
 def load_index_data(csv_file):
@@ -206,8 +235,15 @@ def generate_newsletter_html():
 
 
 def send_newsletter():
-    """Send newsletter via email."""
+    """Send newsletter via email to all subscribers."""
     logger.info("📧 Preparing to send newsletter")
+    
+    # Load subscribers
+    subscribers = load_subscribers()
+    
+    if not subscribers:
+        logger.error("❌ No subscribers found, aborting")
+        return False
     
     # Generate HTML
     html_file = generate_newsletter_html()
@@ -219,46 +255,65 @@ def send_newsletter():
     with open(html_file, 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    # Create email message
-    msg = MIMEMultipart('related')
-    msg['Subject'] = f"Weekly Freight Indices Newsletter - {datetime.now().strftime('%B %d, %Y')}"
-    msg['From'] = config['email']
-    msg['To'] = config['email']  # Send to self
-    
-    # Attach HTML
-    msg_html = MIMEText(html_content, 'html', 'utf-8')
-    msg.attach(msg_html)
-    
-    # Attach charts as embedded images
-    logger.info("📎 Attaching charts")
-    
-    # WCI/SCFI chart
+    # Read chart images
     with open(CHART_WCI_SCFI, 'rb') as f:
-        img = MIMEImage(f.read())
-        img.add_header('Content-ID', '<chart_wci_scfi>')
-        msg.attach(img)
+        wci_scfi_img = f.read()
     
-    # IACI chart
     with open(CHART_IACI, 'rb') as f:
-        img = MIMEImage(f.read())
-        img.add_header('Content-ID', '<chart_iaci>')
-        msg.attach(img)
+        iaci_img = f.read()
     
-    # Send email
-    logger.info(f"📤 Sending email via {config['smtp_server']}:{config['smtp_port']}")
+    # Send to each subscriber
+    logger.info(f"📤 Sending newsletter to {len(subscribers)} subscriber(s)")
+    
+    success_count = 0
+    fail_count = 0
     
     try:
         with smtplib.SMTP(config['smtp_server'], config['smtp_port']) as server:
             server.starttls()
             server.login(config['email'], config['password'])
-            server.send_message(msg)
+            logger.info(f"✅ Connected to {config['smtp_server']}")
+            
+            for subscriber_email in subscribers:
+                try:
+                    # Create email message for each subscriber
+                    msg = MIMEMultipart('related')
+                    msg['Subject'] = f"Weekly Freight Indices Newsletter - {datetime.now().strftime('%B %d, %Y')}"
+                    msg['From'] = config['email']
+                    msg['To'] = subscriber_email
+                    
+                    # Attach HTML
+                    msg_html = MIMEText(html_content, 'html', 'utf-8')
+                    msg.attach(msg_html)
+                    
+                    # Attach charts
+                    img1 = MIMEImage(wci_scfi_img)
+                    img1.add_header('Content-ID', '<chart_wci_scfi>')
+                    msg.attach(img1)
+                    
+                    img2 = MIMEImage(iaci_img)
+                    img2.add_header('Content-ID', '<chart_iaci>')
+                    msg.attach(img2)
+                    
+                    # Send
+                    server.send_message(msg)
+                    logger.info(f"  ✅ Sent to {subscriber_email}")
+                    success_count += 1
+                    
+                except Exception as e:
+                    logger.error(f"  ❌ Failed to send to {subscriber_email}: {str(e)}")
+                    fail_count += 1
         
-        logger.info("✅ Newsletter sent successfully!")
         logger.info("=" * 80)
-        return True
+        logger.info(f"✅ Newsletter sending complete!")
+        logger.info(f"   Success: {success_count}")
+        logger.info(f"   Failed: {fail_count}")
+        logger.info("=" * 80)
+        
+        return success_count > 0
         
     except Exception as e:
-        logger.error(f"❌ Failed to send newsletter: {str(e)}")
+        logger.error(f"❌ Failed to connect to SMTP server: {str(e)}")
         raise
 
 
