@@ -90,7 +90,7 @@ def create_wci_scfi_chart():
     ax.plot(scfi_df['Date'], scfi_df['Value'], 
             color=COLOR_SCFI, linewidth=2.5, label='SCFI', marker='s', markersize=4)
     
-    ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+    ax.set_xlabel('')  # Remove "Date" label
     ax.set_ylabel('USD per 40ft container', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--')
     
@@ -103,25 +103,23 @@ def create_wci_scfi_chart():
         last_wci_date = wci_df['Date'].iloc[-1]
         last_wci_value = wci_df['Value'].iloc[-1]
         
-        # Annotate WCI value with white background box
+        # Annotate WCI value with white background box (no arrow)
         ax.annotate(f'WCI: ${last_wci_value:.0f}', 
                    xy=(last_wci_date, last_wci_value),
                    xytext=(10, 10), textcoords='offset points',
                    fontsize=10, fontweight='bold', color=COLOR_WCI,
-                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_WCI, linewidth=2),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_WCI, lw=1.5))
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_WCI, linewidth=2))
     
     if len(scfi_df) > 0:
         last_scfi_date = scfi_df['Date'].iloc[-1]
         last_scfi_value = scfi_df['Value'].iloc[-1]
         
-        # Annotate SCFI value with white background box (offset differently to avoid overlap)
+        # Annotate SCFI value with white background box (no arrow, offset differently to avoid overlap)
         ax.annotate(f'SCFI: ${last_scfi_value:.0f}', 
                    xy=(last_scfi_date, last_scfi_value),
                    xytext=(10, -25), textcoords='offset points',
                    fontsize=10, fontweight='bold', color=COLOR_SCFI,
-                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_SCFI, linewidth=2),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_SCFI, lw=1.5))
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_SCFI, linewidth=2))
     
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
@@ -168,7 +166,7 @@ def create_iaci_chart():
     # Plot IACI
     ax.plot(iaci_df['Date'], iaci_df['Value'], 
             color=COLOR_IACI, linewidth=2.5, marker='o', markersize=4)
-    ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+    ax.set_xlabel('')  # Remove "Date" label
     ax.set_ylabel('IACI (USD per 40ft container)', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--')
     
@@ -203,13 +201,12 @@ def create_iaci_chart():
                     labels.append(tick_date.strftime('%b %Y'))
             ax.set_xticklabels(labels)
         
-        # Add value annotation for last point
+        # Add value annotation for last point (no arrow)
         ax.annotate(f'${last_value:.0f}', 
                    xy=(last_date, last_value),
                    xytext=(10, 10), textcoords='offset points',
                    fontsize=10, fontweight='bold',
-                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_IACI, linewidth=2),
-                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_IACI, lw=1.5))
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_IACI, linewidth=2))
     
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
