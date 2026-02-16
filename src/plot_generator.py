@@ -41,19 +41,8 @@ def load_and_prepare_data(csv_path, date_col='Date', value_col='Value'):
     df = pd.read_csv(csv_path)
     logger.info(f"✅ Loaded {len(df)} records")
     
-    # Try multiple date formats
-    date_formats = ['%d.%m.%Y', '%m/%d/%Y', '%Y-%m-%d', '%d/%m/%Y']
-    df[date_col] = None
-    
-    for fmt in date_formats:
-        try:
-            df[date_col] = pd.to_datetime(df['Date'].astype(str), format=fmt, errors='coerce')
-            # Check if we got valid dates
-            if df[date_col].notna().sum() > 0:
-                logger.info(f"✅ Successfully parsed dates using format: {fmt}")
-                break
-        except:
-            continue
+    # Convert date column to datetime (DD.MM.YYYY format)
+    df[date_col] = pd.to_datetime(df[date_col], format='%d.%m.%Y', errors='coerce')
     
     # Remove rows with invalid dates
     df = df.dropna(subset=[date_col])
@@ -62,6 +51,7 @@ def load_and_prepare_data(csv_path, date_col='Date', value_col='Value'):
     df = df.sort_values(date_col)
     
     logger.info(f"✅ Date range: {df[date_col].min()} to {df[date_col].max()}")
+    logger.info(f"✅ Valid records after parsing: {len(df)}")
     
     return df
 
