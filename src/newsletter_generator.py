@@ -174,7 +174,7 @@ def generate_table_rows():
         
         # Format values
         value_str = f"${current_value:,.0f}"  # No decimal places
-        date_str = current_date.strftime('%b %d, %Y')
+        date_str = current_date.strftime('%d/%m')  # DD/MM without year
         
         week_str, week_class = format_change(week_change)
         yoy_str, yoy_class = format_change(yoy_change)
