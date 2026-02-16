@@ -75,28 +75,28 @@ def create_wci_scfi_chart():
     logger.info(f"📊 WCI records after filtering: {len(wci_df)}")
     logger.info(f"📊 SCFI records after filtering: {len(scfi_df)}")
     
-    # Create figure
-    fig, ax1 = plt.subplots(figsize=(14, 8))
+    if len(wci_df) == 0:
+        logger.warning("⚠️ No WCI data available from 2025-01-01")
+    if len(scfi_df) == 0:
+        logger.warning("⚠️ No SCFI data available from 2025-01-01")
     
-    # Plot WCI on primary y-axis
-    ax1.plot(wci_df['Date'], wci_df['Value'], 
-             color=COLOR_WCI, linewidth=2.5, label='WCI', marker='o', markersize=4)
-    ax1.set_xlabel('Date', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('WCI (USD per 40ft container)', fontsize=12, fontweight='bold', color=COLOR_WCI)
-    ax1.tick_params(axis='y', labelcolor=COLOR_WCI)
-    ax1.grid(True, alpha=0.3, linestyle='--')
+    # Create figure with single y-axis
+    fig, ax = plt.subplots(figsize=(14, 8))
     
-    # Create secondary y-axis for SCFI
-    ax2 = ax1.twinx()
-    ax2.plot(scfi_df['Date'], scfi_df['Value'], 
-             color=COLOR_SCFI, linewidth=2.5, label='SCFI', marker='s', markersize=4)
-    ax2.set_ylabel('SCFI (Index Points)', fontsize=12, fontweight='bold', color=COLOR_SCFI)
-    ax2.tick_params(axis='y', labelcolor=COLOR_SCFI)
+    # Plot both on same y-axis (both in USD)
+    ax.plot(wci_df['Date'], wci_df['Value'], 
+            color=COLOR_WCI, linewidth=2.5, label='WCI', marker='o', markersize=4)
+    ax.plot(scfi_df['Date'], scfi_df['Value'], 
+            color=COLOR_SCFI, linewidth=2.5, label='SCFI', marker='s', markersize=4)
+    
+    ax.set_xlabel('Date', fontsize=12, fontweight='bold')
+    ax.set_ylabel('USD per 40ft container', fontsize=12, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle='--')
     
     # Format x-axis
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-    ax1.xaxis.set_major_locator(mdates.MonthLocator())
-    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+    ax.xaxis.set_major_locator(mdates.MonthLocator())
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
     # Title and subtitle
     current_date = datetime.now().strftime('%B %d, %Y')
@@ -108,9 +108,7 @@ def create_wci_scfi_chart():
     fig.text(0.98, 0.98, '© Dói Ennoson', ha='right', va='top', fontsize=9, style='italic')
     
     # Legend
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=11)
+    ax.legend(loc='upper left', fontsize=11)
     
     # Adjust layout
     plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -150,6 +148,23 @@ def create_iaci_chart():
     # Format x-axis
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    
+    # Get the last date and always show it
+    if len(iaci_df) > 0:
+        last_date = iaci_df['Date'].iloc[-1]
+        
+        # Get current tick locations and labels
+        current_ticks = list(ax.get_xticks())
+        
+        # Convert last_date to matplotlib date number
+        last_date_num = mdates.date2num(last_date)
+        
+        # Add last date to ticks if not already there
+        if last_date_num not in current_ticks:
+            current_ticks.append(last_date_num)
+            current_ticks.sort()
+            ax.set_xticks(current_ticks)
+    
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
     # Title and subtitle
