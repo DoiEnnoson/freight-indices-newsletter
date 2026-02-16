@@ -1,30 +1,33 @@
 import email
 from email.header import decode_header
 import imaplib
-import json
 import os
 import re
 import requests
-import time
+import smtplib
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
+from email.mime.text import MIMEText
 import pandas as pd
 import logging
 
-# Logging einrichten
+# Logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger()
 
-# Pfade
+# Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 WCI_CSV = os.path.join(DATA_DIR, "wci.csv")
 IACI_CSV = os.path.join(DATA_DIR, "iaci.csv")
 SCFI_CSV = os.path.join(DATA_DIR, "scfi.csv")
+
+# Warning email recipient
+WARNING_EMAIL = "hadobrockmeyer@gmail.com"
 
 
 def parse_email_config():
@@ -35,41 +38,70 @@ def parse_email_config():
     
     parts = config.split(":")
     if len(parts) != 4:
-        raise ValueError("EMAIL_CONFIG must be in format: email:password:imap_server:port")
+        raise ValueError("EMAIL_CONFIG must be in format: email:password:smtp_server:port")
     
     return {
         "email": parts[0],
         "password": parts[1],
-        "imap_server": parts[2],
-        "imap_port": int(parts[3])
+        "smtp_server": parts[2],
+        "smtp_port": int(parts[3])
     }
 
 
+def send_warning_email(subject, message):
+    """Send warning email when data collection fails."""
+    logger.warning(f"⚠️ Sending warning email: {subject}")
+    
+    try:
+        config = parse_email_config()
+        
+        msg = MIMEText(
+            f"Freight Indices Scraper Warning\n\n"
+            f"Problem: {subject}\n"
+            f"Details: {message}\n"
+            f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+            "plain",
+            "utf-8"
+        )
+        msg["Subject"] = f"⚠️ Freight Indices Warning: {subject}"
+        msg["From"] = config["email"]
+        msg["To"] = WARNING_EMAIL
+        
+        with smtplib.SMTP(config["smtp_server"], config["smtp_port"]) as server:
+            server.starttls()
+            server.login(config["email"], config["password"])
+            server.send_message(msg)
+        
+        logger.info("✅ Warning email sent successfully")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to send warning email: {str(e)}")
+
+
 def fetch_wci_email():
-    """Holt die neueste Drewry WCI-E-Mail aus den letzten 14 Tagen."""
+    """Fetch latest WCI email from last 14 days."""
     logger.info("🔍 DEBUG - fetch_wci_email: Starting WCI email fetch")
     
     try:
         config = parse_email_config()
         logger.info(f"✅ DEBUG - fetch_wci_email: Connected to mailbox: {config['email']}")
         
-        mail = imaplib.IMAP4_SSL(config['imap_server'], config['imap_port'], timeout=30)
+        mail = imaplib.IMAP4_SSL(config['smtp_server'].replace('smtp', 'imap'), 993, timeout=30)
         mail.login(config['email'], config['password'])
         logger.info("✅ DEBUG - fetch_wci_email: Successfully logged into mailbox")
         
         result, data = mail.select('inbox')
         if result != 'OK':
-            logger.error(f"❌ DEBUG - fetch_wci_email: Failed to select inbox: {result}")
+            logger.error(f"❌ DEBUG - fetch_wci_email: Failed to select inbox")
             raise Exception(f"IMAP select failed: {result}")
         
-        # Suche nach WCI-E-Mails der letzten 14 Tage
         since_date = (datetime.now() - timedelta(days=14)).strftime("%d-%b-%Y")
         search_criteria = f'FROM noreply@drewry.co.uk SINCE {since_date}'
         logger.info(f"🔍 DEBUG - fetch_wci_email: Searching with criteria: {search_criteria}")
         
         result, data = mail.search(None, search_criteria)
         if result != 'OK':
-            logger.error(f"❌ DEBUG - fetch_wci_email: Search failed: {result}")
+            logger.error(f"❌ DEBUG - fetch_wci_email: Search failed")
             raise Exception(f"IMAP search failed: {result}")
         
         email_ids = data[0].split()
@@ -80,8 +112,7 @@ def fetch_wci_email():
             mail.logout()
             return None, None
         
-        # Durchsuche E-Mails nach WCI
-        for email_id in email_ids[::-1]:  # Neueste zuerst
+        for email_id in email_ids[::-1]:
             result, data = mail.fetch(email_id, '(RFC822)')
             if result != 'OK':
                 continue
@@ -112,8 +143,6 @@ def fetch_wci_email():
                     logger.info("✅ DEBUG - fetch_wci_email: Successfully extracted HTML content")
                     mail.logout()
                     return html_content, subject
-                else:
-                    logger.warning(f"⚠️ DEBUG - fetch_wci_email: No HTML content in email")
         
         logger.warning("⚠️ DEBUG - fetch_wci_email: No matching WCI email found")
         mail.logout()
@@ -127,14 +156,13 @@ def fetch_wci_email():
 
 
 def extract_wci_from_html(html_content, subject):
-    """Extrahiert WCI-Wert und Datum aus HTML."""
+    """Extract WCI value and date from HTML."""
     logger.info("🔍 DEBUG - extract_wci_from_html: Parsing HTML content")
     
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text(strip=True)
         
-        # Extrahiere WCI-Wert
         wci_match = re.search(r'\$(\d{1,3}(,\d{3})*)\s*per 40ft container', text)
         if not wci_match:
             logger.error("❌ DEBUG - extract_wci_from_html: Could not extract WCI value")
@@ -143,7 +171,6 @@ def extract_wci_from_html(html_content, subject):
         wci_value = float(wci_match.group(1).replace(',', ''))
         logger.info(f"✅ DEBUG - extract_wci_from_html: Extracted WCI value: ${wci_value:.2f}")
         
-        # Extrahiere Datum
         date_match = re.search(r'(\d{1,2}\s+\w+\s+\d{4})', subject or text)
         wci_date = None
         if date_match:
@@ -168,20 +195,20 @@ def extract_wci_from_html(html_content, subject):
 
 
 def fetch_iaci_email():
-    """Holt die neueste Drewry IACI-E-Mail aus den letzten 14 Tagen."""
+    """Fetch latest IACI email from last 14 days."""
     logger.info("🔍 DEBUG - fetch_iaci_email: Starting IACI email fetch")
     
     try:
         config = parse_email_config()
         logger.info(f"✅ DEBUG - fetch_iaci_email: Connected to mailbox: {config['email']}")
         
-        mail = imaplib.IMAP4_SSL(config['imap_server'], config['imap_port'], timeout=30)
+        mail = imaplib.IMAP4_SSL(config['smtp_server'].replace('smtp', 'imap'), 993, timeout=30)
         mail.login(config['email'], config['password'])
         logger.info("✅ DEBUG - fetch_iaci_email: Successfully logged into mailbox")
         
         result, data = mail.select('inbox')
         if result != 'OK':
-            logger.error(f"❌ DEBUG - fetch_iaci_email: Failed to select inbox: {result}")
+            logger.error(f"❌ DEBUG - fetch_iaci_email: Failed to select inbox")
             raise Exception(f"IMAP select failed: {result}")
         
         since_date = (datetime.now() - timedelta(days=14)).strftime("%d-%b-%Y")
@@ -190,7 +217,7 @@ def fetch_iaci_email():
         
         result, data = mail.search(None, search_criteria)
         if result != 'OK':
-            logger.error(f"❌ DEBUG - fetch_iaci_email: Search failed: {result}")
+            logger.error(f"❌ DEBUG - fetch_iaci_email: Search failed")
             raise Exception(f"IMAP search failed: {result}")
         
         email_ids = data[0].split()
@@ -232,8 +259,6 @@ def fetch_iaci_email():
                     logger.info("✅ DEBUG - fetch_iaci_email: Successfully extracted HTML content")
                     mail.logout()
                     return html_content, subject
-                else:
-                    logger.warning(f"⚠️ DEBUG - fetch_iaci_email: No HTML content in email")
         
         logger.warning("⚠️ DEBUG - fetch_iaci_email: No matching IACI email found")
         mail.logout()
@@ -247,7 +272,7 @@ def fetch_iaci_email():
 
 
 def extract_iaci_from_html(html_content, subject):
-    """Extrahiert IACI-Wert und Datum aus HTML."""
+    """Extract IACI value and date from HTML."""
     logger.info("🔍 DEBUG - extract_iaci_from_html: Parsing HTML content")
     
     try:
@@ -286,7 +311,7 @@ def extract_iaci_from_html(html_content, subject):
 
 
 def fetch_scfi():
-    """Holt SCFI-Daten von der SSE-Website."""
+    """Fetch SCFI data from SSE API."""
     logger.info("🔍 DEBUG - fetch_scfi: Starting SCFI fetch from SSE API")
     
     url = "https://en.sse.net.cn/currentIndex?indexName=scfi"
@@ -315,7 +340,6 @@ def fetch_scfi():
         scfi_value = float(line_data_list[0]["currentContent"])
         logger.info(f"✅ DEBUG - fetch_scfi: Extracted SCFI value: {scfi_value:.2f}")
         
-        # Datum parsen
         scfi_date = None
         for fmt in ["%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y"]:
             try:
@@ -338,7 +362,7 @@ def fetch_scfi():
 
 
 def load_csv(filepath):
-    """Lädt eine CSV-Datei oder erstellt eine leere."""
+    """Load CSV or create empty one."""
     logger.info(f"🔍 DEBUG - load_csv: Loading {filepath}")
     
     if os.path.exists(filepath):
@@ -351,13 +375,13 @@ def load_csv(filepath):
 
 
 def save_csv(df, filepath):
-    """Speichert eine CSV-Datei."""
+    """Save CSV file."""
     df.to_csv(filepath, index=False)
     logger.info(f"✅ DEBUG - save_csv: Saved {len(df)} records to {os.path.basename(filepath)}")
 
 
 def update_data(value, date_str, csv_path, name):
-    """Aktualisiert CSV mit neuem Wert."""
+    """Update CSV with new value."""
     logger.info(f"🔍 DEBUG - update_data: Checking if {name} data needs update")
     
     if value is None or date_str is None:
@@ -366,7 +390,6 @@ def update_data(value, date_str, csv_path, name):
     
     df = load_csv(csv_path)
     
-    # Prüfe ob Datum bereits existiert
     if date_str in df['Date'].values:
         existing_value = df[df['Date'] == date_str]['Value'].values[0]
         if existing_value == value:
@@ -385,36 +408,59 @@ def update_data(value, date_str, csv_path, name):
 
 
 def run_scraper():
-    """Hauptfunktion zum Ausführen des Scrapers."""
+    """Main scraper function with warning emails."""
     logger.info("=" * 80)
     logger.info("🚀 Starting Freight Indices Scraper")
     logger.info("=" * 80)
     
-    # WCI scrapen
+    warnings = []
+    
+    # WCI scraping
     logger.info("\n📦 WCI - World Container Index")
     logger.info("-" * 80)
     wci_html, wci_subject = fetch_wci_email()
     if wci_html:
         wci_value, wci_date = extract_wci_from_html(wci_html, wci_subject)
-        update_data(wci_value, wci_date, WCI_CSV, "WCI")
+        if wci_value is None or wci_date is None:
+            warnings.append("WCI: Email found but could not extract value/date")
+        else:
+            update_data(wci_value, wci_date, WCI_CSV, "WCI")
     else:
+        warnings.append("WCI: No email found in last 14 days")
         logger.warning("⚠️ WCI: No email data available")
     
-    # IACI scrapen
+    # IACI scraping
     logger.info("\n📦 IACI - Intra-Asia Container Index")
     logger.info("-" * 80)
     iaci_html, iaci_subject = fetch_iaci_email()
     if iaci_html:
         iaci_value, iaci_date = extract_iaci_from_html(iaci_html, iaci_subject)
-        update_data(iaci_value, iaci_date, IACI_CSV, "IACI")
+        if iaci_value is None or iaci_date is None:
+            warnings.append("IACI: Email found but could not extract value/date")
+        else:
+            update_data(iaci_value, iaci_date, IACI_CSV, "IACI")
     else:
+        warnings.append("IACI: No email found in last 14 days")
         logger.warning("⚠️ IACI: No email data available")
     
-    # SCFI scrapen
+    # SCFI scraping
     logger.info("\n📦 SCFI - Shanghai Containerized Freight Index")
     logger.info("-" * 80)
     scfi_value, scfi_date = fetch_scfi()
-    update_data(scfi_value, scfi_date, SCFI_CSV, "SCFI")
+    if scfi_value is None or scfi_date is None:
+        warnings.append("SCFI: API request failed or could not extract value/date")
+        logger.warning("⚠️ SCFI: No data available")
+    else:
+        update_data(scfi_value, scfi_date, SCFI_CSV, "SCFI")
+    
+    # Send warning email if any failures
+    if warnings:
+        logger.warning(f"\n⚠️ {len(warnings)} warning(s) detected:")
+        for w in warnings:
+            logger.warning(f"  - {w}")
+        
+        warning_message = "\n".join(f"• {w}" for w in warnings)
+        send_warning_email("Data Collection Failed", warning_message)
     
     logger.info("\n" + "=" * 80)
     logger.info("✅ Scraper finished")
