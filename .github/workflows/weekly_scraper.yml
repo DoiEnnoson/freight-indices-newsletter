@@ -3,7 +3,7 @@ name: Weekly Freight Indices Scraper
 on:
   schedule:
     # Jeden Freitag um 13:00 deutscher Zeit (11:00 UTC im Winter, 12:00 UTC im Sommer)
-    - cron: '0 11 * * 5'
+    - cron: '0 12 * * 5'
   workflow_dispatch:  # Ermöglicht manuelles Auslösen
 
 jobs:
