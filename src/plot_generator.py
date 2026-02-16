@@ -94,26 +94,34 @@ def create_wci_scfi_chart():
     ax.set_ylabel('USD per 40ft container', fontsize=12, fontweight='bold')
     ax.grid(True, alpha=0.3, linestyle='--')
     
-    # Format x-axis
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
+    # Format x-axis with week numbers
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('W%V %Y'))
+    ax.xaxis.set_major_locator(mdates.WeekdayLocator(interval=4))  # Every 4 weeks
     
-    # Get the last dates and always show them
-    all_dates = pd.concat([wci_df['Date'], scfi_df['Date']]).sort_values()
-    if len(all_dates) > 0:
-        last_date = all_dates.iloc[-1]
+    # Get the last dates and values
+    if len(wci_df) > 0:
+        last_wci_date = wci_df['Date'].iloc[-1]
+        last_wci_value = wci_df['Value'].iloc[-1]
         
-        # Get current tick locations
-        current_ticks = list(ax.get_xticks())
+        # Annotate WCI value with white background box
+        ax.annotate(f'WCI: ${last_wci_value:.0f}', 
+                   xy=(last_wci_date, last_wci_value),
+                   xytext=(10, 10), textcoords='offset points',
+                   fontsize=10, fontweight='bold', color=COLOR_WCI,
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_WCI, linewidth=2),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_WCI, lw=1.5))
+    
+    if len(scfi_df) > 0:
+        last_scfi_date = scfi_df['Date'].iloc[-1]
+        last_scfi_value = scfi_df['Value'].iloc[-1]
         
-        # Convert last_date to matplotlib date number
-        last_date_num = mdates.date2num(last_date)
-        
-        # Add last date to ticks if not already there
-        if last_date_num not in current_ticks:
-            current_ticks.append(last_date_num)
-            current_ticks.sort()
-            ax.set_xticks(current_ticks)
+        # Annotate SCFI value with white background box (offset differently to avoid overlap)
+        ax.annotate(f'SCFI: ${last_scfi_value:.0f}', 
+                   xy=(last_scfi_date, last_scfi_value),
+                   xytext=(10, -25), textcoords='offset points',
+                   fontsize=10, fontweight='bold', color=COLOR_SCFI,
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_SCFI, linewidth=2),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_SCFI, lw=1.5))
     
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
@@ -168,12 +176,14 @@ def create_iaci_chart():
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
     
-    # Get the last date and always show it
+    # Get the last date and always show it with actual date
     if len(iaci_df) > 0:
         last_date = iaci_df['Date'].iloc[-1]
+        last_value = iaci_df['Value'].iloc[-1]
         
         # Get current tick locations and labels
         current_ticks = list(ax.get_xticks())
+        current_labels = [label.get_text() for label in ax.get_xticklabels()]
         
         # Convert last_date to matplotlib date number
         last_date_num = mdates.date2num(last_date)
@@ -181,8 +191,25 @@ def create_iaci_chart():
         # Add last date to ticks if not already there
         if last_date_num not in current_ticks:
             current_ticks.append(last_date_num)
-            current_ticks.sort()
             ax.set_xticks(current_ticks)
+            
+            # Format labels: all others as "Mon YYYY", last one as "DD Mon YYYY"
+            labels = []
+            for tick in current_ticks:
+                tick_date = mdates.num2date(tick)
+                if abs(tick - last_date_num) < 0.5:  # This is the last date
+                    labels.append(tick_date.strftime('%d %b %Y'))
+                else:
+                    labels.append(tick_date.strftime('%b %Y'))
+            ax.set_xticklabels(labels)
+        
+        # Add value annotation for last point
+        ax.annotate(f'${last_value:.0f}', 
+                   xy=(last_date, last_value),
+                   xytext=(10, 10), textcoords='offset points',
+                   fontsize=10, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor=COLOR_IACI, linewidth=2),
+                   arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0', color=COLOR_IACI, lw=1.5))
     
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
     
