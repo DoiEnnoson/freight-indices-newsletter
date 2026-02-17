@@ -174,6 +174,10 @@ def create_iaci_chart():
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
     
+    # Set x-axis limits to actual data range
+    if len(iaci_df) > 0:
+        ax.set_xlim(iaci_df['Date'].min(), iaci_df['Date'].max())
+    
     # Get the last date and always show it with actual date
     if len(iaci_df) > 0:
         last_date = iaci_df['Date'].iloc[-1]
