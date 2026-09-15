@@ -126,7 +126,7 @@ def fetch_wci_email():
             
             logger.info(f"📨 DEBUG - fetch_wci_email: Checking email subject: {subject}")
             
-            if "World Container Index" in subject:
+            if "World Container Freight Market Update" in subject:
                 logger.info(f"✅ DEBUG - fetch_wci_email: Found relevant WCI email: {subject}")
                 
                 html_content = None
@@ -163,11 +163,11 @@ def extract_wci_from_html(html_content, subject):
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text(strip=True)
         
-        wci_match = re.search(r'\$(\d{1,3}(,\d{3})*)\s*per 40ft container', text)
+        wci_match = re.search(r'\(WCI\)[^$]*\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
         if not wci_match:
             logger.error("❌ DEBUG - extract_wci_from_html: Could not extract WCI value")
             return None, None
-        
+
         wci_value = float(wci_match.group(1).replace(',', ''))
         logger.info(f"✅ DEBUG - extract_wci_from_html: Extracted WCI value: ${wci_value:.2f}")
         
@@ -242,7 +242,7 @@ def fetch_iaci_email():
             
             logger.info(f"📨 DEBUG - fetch_iaci_email: Checking email subject: {subject}")
             
-            if "Intra-Asia" in subject:
+            if "World Container Freight Market Update" in subject:
                 logger.info(f"✅ DEBUG - fetch_iaci_email: Found relevant IACI email: {subject}")
                 
                 html_content = None
@@ -279,11 +279,11 @@ def extract_iaci_from_html(html_content, subject):
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text(strip=True)
         
-        iaci_match = re.search(r'\$(\d{1,3}(,\d{3})*)\s*per 40ft container', text)
+        iaci_match = re.search(r'\(IACI\)[^$]*\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
         if not iaci_match:
             logger.error("❌ DEBUG - extract_iaci_from_html: Could not extract IACI value")
             return None, None
-        
+
         iaci_value = float(iaci_match.group(1).replace(',', ''))
         logger.info(f"✅ DEBUG - extract_iaci_from_html: Extracted IACI value: ${iaci_value:.2f}")
         
