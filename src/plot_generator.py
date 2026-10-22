@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -128,7 +129,17 @@ def create_wci_scfi_chart():
     # Both in USD on the same axis
     ax.plot(wci_df['Date'], wci_df['Value'], color=COLOR_WCI, linewidth=2.5)
     ax.plot(scfi_df['Date'], scfi_df['Value'], color=COLOR_SCFI, linewidth=2.5)
-    ax.set_ylim(bottom=min(wci_df['Value'].min(), scfi_df['Value'].min()) * 0.9)
+    bottom = min(wci_df['Value'].min(), scfi_df['Value'].min()) * 0.9
+    ax.set_ylim(bottom=bottom)
+    
+    # Shading: green below SCFI, blue between SCFI and WCI. WCI (Thursday) and SCFI (Friday)
+    # have different dates, so both are interpolated onto the union of their dates.
+    grid = np.union1d(mdates.date2num(wci_df['Date']), mdates.date2num(scfi_df['Date']))
+    wci_grid = np.interp(grid, mdates.date2num(wci_df['Date']), wci_df['Value'])
+    scfi_grid = np.interp(grid, mdates.date2num(scfi_df['Date']), scfi_df['Value'])
+    grid_dates = mdates.num2date(grid)
+    ax.fill_between(grid_dates, scfi_grid, bottom, color=COLOR_SCFI, alpha=0.15)
+    ax.fill_between(grid_dates, wci_grid, scfi_grid, color=COLOR_WCI, alpha=0.08)
     
     # Direct labels right of the line ends instead of a legend; extra space on the right for them
     last_date = max(wci_df['Date'].max(), scfi_df['Date'].max())
