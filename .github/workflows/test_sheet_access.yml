@@ -1,0 +1,31 @@
+name: Test Sheet Access
+
+on:
+  push:
+    branches: [subscriber-signup]
+    paths: ['.github/workflows/test_sheet_access.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - run: pip install gspread==6.1.2 google-auth==2.35.0
+    - name: Read subscriber sheet (counts only, no addresses)
+      env:
+        GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+      run: |
+        python - <<'PY'
+        import json, os, gspread
+        info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT"])
+        print("Service account:", info.get("client_email"))
+        gc = gspread.service_account_from_dict(info)
+        sh = gc.open_by_key("1ZOS8FMWxDX9EjS7R47MNV8YkdTp5SIIxY563-POBLao")
+        ws = sh.sheet1
+        rows = ws.get_all_values()
+        print("Spreadsheet:", sh.title, "| Worksheet:", ws.title)
+        print("Headers:", rows[0] if rows else None)
+        print("Data rows:", max(len(rows) - 1, 0))
+        PY
