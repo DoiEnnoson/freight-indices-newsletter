@@ -19,7 +19,6 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
 WCI_SCFI_OUTPUT = os.path.join(OUTPUT_DIR, "wci_scfi", "wci_scfi_chart.png")
 IACI_OUTPUT = os.path.join(OUTPUT_DIR, "iaci", "iaci_chart.png")
-WCI_WEB_OUTPUT = os.path.join(BASE_DIR, "docs", "wci_chart.png")  # Signup page (GitHub Pages)
 
 # Colors
 COLOR_WCI = "#0E2841"  # Dark blue
@@ -236,55 +235,6 @@ def create_iaci_chart():
     return True
 
 
-def create_wci_web_chart():
-    """Create compact WCI chart (last 12 months) for the signup page."""
-    logger.info("📊 Creating WCI chart for signup page")
-    
-    wci_df = load_and_prepare_data(os.path.join(DATA_DIR, "wci.csv"))
-    if wci_df is None or len(wci_df) == 0:
-        logger.error("❌ Could not load data for WCI web chart")
-        return False
-    
-    start_date = wci_df['Date'].max() - pd.DateOffset(months=12)
-    wci_df = wci_df[wci_df['Date'] >= start_date]
-    
-    fig, ax = plt.subplots(figsize=(10, 4.5))
-    
-    ax.plot(wci_df['Date'], wci_df['Value'], color=COLOR_WCI, linewidth=2.5)
-    ax.fill_between(wci_df['Date'], wci_df['Value'], wci_df['Value'].min() * 0.9,
-                    color=COLOR_WCI, alpha=0.08)
-    ax.set_ylim(bottom=wci_df['Value'].min() * 0.9)
-    
-    # Highlight latest value
-    last_date = wci_df['Date'].iloc[-1]
-    last_value = wci_df['Value'].iloc[-1]
-    ax.scatter([last_date], [last_value], color=COLOR_SCFI, edgecolor=COLOR_WCI, s=60, zorder=3)
-    ax.annotate(f'${last_value:,.0f}\n{last_date.strftime("%d %b %Y")}',
-                xy=(last_date, last_value), xytext=(-10, 12), textcoords='offset points',
-                ha='right', fontsize=10, fontweight='bold', color=COLOR_WCI)
-    
-    ax.set_ylabel('USD per 40ft container', fontsize=10)
-    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f'${v:,.0f}'))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-    ax.grid(True, axis='y', alpha=0.3, linestyle='--')
-    for side in ('top', 'right'):
-        ax.spines[side].set_visible(False)
-    ax.tick_params(labelsize=9)
-    
-    ax.set_title('Drewry World Container Index (WCI), last 12 months',
-                 fontsize=13, fontweight='bold', color=COLOR_WCI, loc='left')
-    fig.text(0.99, 0.01, 'Source: Drewry  |  © Dói Ennoson', ha='right', va='bottom', fontsize=8, style='italic')
-    
-    plt.tight_layout(rect=[0, 0.03, 1, 1])
-    os.makedirs(os.path.dirname(WCI_WEB_OUTPUT), exist_ok=True)
-    plt.savefig(WCI_WEB_OUTPUT, dpi=160, facecolor='white')
-    plt.close()
-    
-    logger.info(f"✅ WCI web chart saved to {WCI_WEB_OUTPUT}")
-    return True
-
-
 def generate_all_plots():
     """Generate all plots."""
     logger.info("=" * 80)
@@ -302,11 +252,6 @@ def generate_all_plots():
     if not create_iaci_chart():
         success = False
         logger.error("❌ Failed to create IACI chart")
-    
-    # Generate WCI chart for the signup page
-    if not create_wci_web_chart():
-        success = False
-        logger.error("❌ Failed to create WCI web chart")
     
     logger.info("=" * 80)
     if success:

@@ -55,7 +55,7 @@ This project automatically:
 - 🚪 **Unsubscribe link** in every email plus `List-Unsubscribe` header (Gmail shows its own unsubscribe button)
 
 ### Subscriptions
-- 📝 **Signup page** on GitHub Pages with privacy notice and a weekly updated WCI chart
+- 📝 **Signup page** on GitHub Pages with privacy notice
 - 🔐 **Private subscriber list** in a Google Sheet, never in this public repository
 - ✉️ **Double opt-in** by replying to a confirmation email
 - 🧹 **Automatic cleanup** of unconfirmed and old unsubscribed entries
@@ -296,7 +296,6 @@ freight-indices-newsletter/
 ├── docs/                               # GitHub Pages
 │   ├── index.html                      # Signup page
 │   ├── privacy.html                    # Privacy notice (GDPR)
-│   ├── wci_chart.png                   # WCI chart (last 12 months), updated weekly
 │   └── style.css
 │
 ├── data/
