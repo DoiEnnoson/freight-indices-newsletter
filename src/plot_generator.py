@@ -150,15 +150,14 @@ def create_wci_scfi_chart():
     last_week = weeks.index.max()
     first_week = weeks.index.min()
     ax.set_xlim(left=first_week - pd.Timedelta(days=7), right=last_week + (last_week - first_week) * 0.12)
-    mark_last_value(ax, wci_df, COLOR_WCI, 'WCI ', side='right', x_col='Week', date_format='W%V %G')
-    mark_last_value(ax, scfi_df, COLOR_SCFI, 'SCFI ', side='right', x_col='Week', date_format='W%V %G')
+    mark_last_value(ax, wci_df, COLOR_WCI, 'WCI ', side='right', x_col='Week', date_format='W%V')
+    mark_last_value(ax, scfi_df, COLOR_SCFI, 'SCFI ', side='right', x_col='Week', date_format='W%V')
     
     style_chart(fig, ax, 'WCI vs. SCFI since January 2025', 'Drewry, Shanghai Shipping Exchange')
     # Calendar week labels every 8 weeks, none in the empty label area right of the data
     ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO, interval=8))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('W%V\n%G'))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('W%V'))
     ax.set_xticks([t for t in ax.get_xticks() if t <= mdates.date2num(last_week)])
-    plt.tight_layout(rect=[0, 0.05, 1, 1])  # Room for two-line week labels above the source line
     os.makedirs(os.path.dirname(WCI_SCFI_OUTPUT), exist_ok=True)
     plt.savefig(WCI_SCFI_OUTPUT, dpi=160, facecolor='white')
     plt.close()
