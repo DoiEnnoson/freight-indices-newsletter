@@ -72,3 +72,12 @@ a { color: inherit; }
     font-size: 17px;
     font-weight: 700;
 }
+.chart { margin: 24px 0 0; }
+.chart img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+.chart figcaption { margin-top: 6px; font-size: 13px; color: var(--muted); }
