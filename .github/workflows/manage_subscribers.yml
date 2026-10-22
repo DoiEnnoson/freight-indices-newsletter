@@ -2,8 +2,9 @@ name: Manage Subscribers
 
 on:
   schedule:
-    # Daily 06:17 UTC: send confirmation emails, record confirmations and unsubscribes
-    - cron: '17 6 * * *'
+    # Every 6 hours (00:17, 06:17, 12:17, 18:17 UTC): send confirmation emails,
+    # record confirmations and unsubscribes
+    - cron: '17 */6 * * *'
   workflow_dispatch:  # Allows manual triggering
 
 jobs:

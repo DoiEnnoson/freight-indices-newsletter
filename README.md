@@ -89,7 +89,7 @@ This project automatically:
 │   ├─ Generate HTML                                      │
 │   └─ Send to confirmed subscribers                      │
 │                                                         │
-│  Manage Subscribers (daily 06:17 UTC)                   │
+│  Manage Subscribers (every 6 hours)                     │
 │   └─ Confirmation emails, replies, unsubscribes         │
 └─────────────────────────────────────────────────────────┘
 
@@ -208,7 +208,7 @@ Subscribers are stored in a **private Google Sheet**, never in this public repos
 
 1. The signup page (`docs/index.html`) links to the Google Form (email + consent)
 2. The form writes into the sheet (`Timestamp`, `Email Address`, `Consent`)
-3. `src/subscriber_manager.py` runs daily and before every newsletter:
+3. `src/subscriber_manager.py` runs every 6 hours and before every newsletter:
    - sends a confirmation email with a token `[FIN-xxxxxxxx]` in the subject to each new entry
    - confirms an entry when a reply containing its token arrives in the Gmail inbox
    - unsubscribes the sender of any email with `Unsubscribe` in the subject (only entries created before that email, so a later re-signup is not affected)
@@ -268,7 +268,7 @@ Only the scraper has a fixed schedule. It is triggered externally by cron-job.or
 | **Fri 15:47 Beijing time** via cron-job.org (07:47 UTC, 08:47 CET / 09:47 CEST) | Weekly Freight Indices Scraper | Fetch WCI, IACI, SCFI data |
 | after successful cron-job.org scraper run | Generate Freight Indices Plots | Create charts from CSV data |
 | after successful chained plot run | Send Weekly Newsletter | Process signups, send emails |
-| **daily 06:17 UTC** (GitHub schedule) | Manage Subscribers | Confirmations and unsubscribes |
+| **every 6 hours** at :17 (GitHub schedule) | Manage Subscribers | Confirmations and unsubscribes |
 
 China has no daylight saving time; the cron-job.org job runs in time zone `Asia/Shanghai`, so the trigger time never shifts.
 
@@ -285,7 +285,7 @@ freight-indices-newsletter/
 │       ├── weekly_scraper.yml          # Scraper, triggered by cron-job.org
 │       ├── generate_plots.yml          # Charts, chained after the scraper
 │       ├── send_newsletter.yml         # Newsletter, chained after the charts
-│       └── manage_subscribers.yml      # Daily signup processing
+│       └── manage_subscribers.yml      # Signup processing every 6 hours
 │
 ├── src/
 │   ├── scraper.py                      # Data collection
@@ -358,7 +358,7 @@ freight-indices-newsletter/
 3. Verify the Google Sheets API is enabled in the Google Cloud project
 
 #### Reply sent, but status stays `pending`
-1. Confirmations are processed by the next daily run (06:17 UTC) or the next newsletter run
+1. Confirmations are processed by the next run (every 6 hours at 00:17, 06:17, 12:17, 18:17 UTC) or the next newsletter run
 2. The reply must keep the subject with `[FIN-xxxxxxxx]` and arrive in the inbox of the `EMAIL_CONFIG` account
 
 ### Warning Emails
@@ -420,7 +420,7 @@ Note: Git history before October 2026 still contains the former `subscribers.csv
 **Subscription management**
 - Signup page and privacy notice on GitHub Pages (`docs/`), linking to a Google Form
 - Subscriber list moved from `subscribers.csv` (deleted, would have been public) to a private Google Sheet, accessed via a Google service account
-- Double opt-in: confirmation email with token, confirmation by reply (`src/subscriber_manager.py`, daily workflow `manage_subscribers.yml`)
+- Double opt-in: confirmation email with token, confirmation by reply (`src/subscriber_manager.py`, workflow `manage_subscribers.yml` every 6 hours)
 - Unsubscribe via link (`mailto:` with subject `Unsubscribe`) and `List-Unsubscribe` header in every newsletter
 - Automatic deletion of unconfirmed (30 days) and unsubscribed (3 years) entries
 - Subscriber addresses removed from all logs
