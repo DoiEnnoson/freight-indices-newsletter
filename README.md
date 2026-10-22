@@ -63,7 +63,7 @@ This project automatically:
 │                   GITHUB ACTIONS                        │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  Fri 07:33 UTC     →  Scraper                          │
+│  Fri 15:47 BJT     →  Scraper (cron-job.org)           │
 │                       ├─ WCI Email (Drewry)            │
 │                       ├─ IACI Email (Drewry)           │
 │                       └─ SCFI API (SSE)                │
@@ -254,19 +254,21 @@ Edit `html_template.html` to customize the newsletter design:
 
 ## ⏰ Automation Schedule
 
-Only the scraper has a fixed schedule. The SSE publishes the SCFI on Fridays around 15:00 Beijing time; the scraper runs 30 minutes later. Charts and newsletter are chained via `workflow_run`, so they always run on fresh data and stop if a previous step fails.
+Only the scraper has a fixed schedule, triggered externally by [cron-job.org](https://cron-job.org) via the GitHub API (`repository_dispatch`, event type `weekly-newsletter`), because GitHub's own scheduler often delays runs by hours. The SSE publishes the SCFI on Fridays around 15:00 Beijing time; the scraper runs shortly after. Charts and newsletter are chained via `workflow_run`, so they always run on fresh data and stop if a previous step fails.
 
 | Trigger | Workflow | Action |
 |---------|----------|--------|
-| **Fri 07:33 UTC** (15:33 BJT, 08:33 CET / 09:33 CEST) | Scraper | Fetch WCI, IACI, SCFI data |
-| after successful scheduled scraper run | Plot Generator | Create charts from CSV data |
+| **Fri 15:47 BJT** via cron-job.org (07:47 UTC, 08:47 CET / 09:47 CEST) | Scraper | Fetch WCI, IACI, SCFI data |
+| after successful cron-job.org scraper run | Plot Generator | Create charts from CSV data |
 | after successful chained plot run | Newsletter | Process signups, send emails |
 | **daily 06:17 UTC** | Manage Subscribers | Confirmations and unsubscribes |
 
-GitHub often starts scheduled runs with a delay of several hours.
+The daily subscriber job uses GitHub's own scheduler; delays do not matter there.
 
 **Manual Trigger:**
 All workflows can be triggered manually via **Actions** → **Workflow name** → **Run workflow**. A manual scraper run does not trigger charts and newsletter.
+
+**cron-job.org request:** `POST https://api.github.com/repos/DoiEnnoson/freight-indices-newsletter/dispatches` with headers `Authorization: Bearer <fine-grained token with Contents: read and write>`, `Accept: application/vnd.github+json` and body `{"event_type": "weekly-newsletter"}`.
 
 ---
 

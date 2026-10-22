@@ -1,7 +1,7 @@
 name: Generate Freight Indices Plots
 
 on:
-  # Runs after a successful scheduled scraper run
+  # Runs after a successful scraper run triggered by cron-job.org
   workflow_run:
     workflows: ["Weekly Freight Indices Scraper"]
     types: [completed]
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'schedule')
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'repository_dispatch')
     
     permissions:
       contents: write

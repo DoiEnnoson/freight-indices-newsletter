@@ -1,10 +1,10 @@
 name: Weekly Freight Indices Scraper
 
 on:
-  schedule:
-    # Fridays 07:33 UTC = 15:33 Beijing time, 30 minutes after SCFI publication
-    # (08:33 CET / 09:33 CEST). Charts and newsletter follow automatically via workflow_run.
-    - cron: '33 7 * * 5'
+  # Triggered externally by cron-job.org on Fridays 15:47 Beijing time (07:47 UTC),
+  # shortly after SCFI publication. Charts and newsletter follow via workflow_run.
+  repository_dispatch:
+    types: [weekly-newsletter]
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
