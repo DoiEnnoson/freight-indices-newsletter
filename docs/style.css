@@ -41,7 +41,7 @@ body {
     text-align: center;
 }
 .header h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -0.5px; }
-.header p { margin: 0; opacity: 0.9; font-size: 15px; }
+.header p { margin: 0; opacity: 0.9; font-size: 15px; color: #fff; }
 .content { padding: 28px 24px; }
 h2 { font-size: 18px; margin: 28px 0 8px; }
 h2:first-child { margin-top: 0; }
@@ -66,4 +66,9 @@ a { color: inherit; }
     font-size: 13px;
     color: var(--muted);
     text-align: center;
+}
+.tagline {
+    margin: 20px 0 0;
+    font-size: 17px;
+    font-weight: 700;
 }
