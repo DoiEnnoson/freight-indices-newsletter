@@ -1,11 +1,11 @@
 name: Send Weekly Newsletter
 
 on:
-  # Startet nach einem erfolgreichen Chart-Lauf, der selbst vom Scraper ausgelöst wurde
+  # Runs after a successful plot run that was itself triggered by the scraper
   workflow_run:
     workflows: ["Generate Freight Indices Plots"]
     types: [completed]
-  workflow_dispatch:  # Ermöglicht manuelles Auslösen
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   send-newsletter:
@@ -18,7 +18,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        ref: main  # Enthält die gerade committeten Charts
+        ref: main  # Includes the charts just committed
     
     - name: Set up Python
       uses: actions/setup-python@v5

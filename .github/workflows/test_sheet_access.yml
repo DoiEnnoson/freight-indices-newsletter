@@ -20,3 +20,4 @@ jobs:
         EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
         GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
       run: python src/subscriber_manager.py
+# run 132559

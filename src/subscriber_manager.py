@@ -156,17 +156,17 @@ def get_confirmed_emails():
 def send_confirmation_email(server, config, address, token):
     """Send the double opt-in confirmation email."""
     msg = MIMEText(
-        "Hallo,\n\n"
-        "jemand hat diese Adresse für den wöchentlichen Freight Indices Newsletter angemeldet.\n\n"
-        "Um die Anmeldung zu bestätigen, antworte einfach auf diese E-Mail. "
-        "Der Inhalt deiner Antwort spielt keine Rolle, nur der Betreff muss erhalten bleiben.\n\n"
-        "Wenn du dich nicht angemeldet hast, ignoriere diese E-Mail. "
-        "Du erhältst dann keine weiteren Nachrichten, und deine Adresse wird nach 30 Tagen gelöscht.\n\n"
-        f"Datenschutzhinweis: {SIGNUP_PAGE_URL}privacy.html\n",
+        "Hello,\n\n"
+        "someone has signed up this address for the Weekly Freight Indices Newsletter.\n\n"
+        "To confirm your subscription, simply reply to this email. "
+        "The content of your reply does not matter, just keep the subject line.\n\n"
+        "If you did not sign up, please ignore this email. "
+        "You will not receive any further messages, and your address will be deleted after 30 days.\n\n"
+        f"Privacy notice: {SIGNUP_PAGE_URL}privacy.html\n",
         "plain",
         "utf-8"
     )
-    msg["Subject"] = f"Bitte Anmeldung bestätigen: Freight Indices Newsletter [{TOKEN_PREFIX}{token}]"
+    msg["Subject"] = f"Please confirm your subscription: Freight Indices Newsletter [{TOKEN_PREFIX}{token}]"
     msg["From"] = config["email"]
     msg["To"] = address
     server.send_message(msg)

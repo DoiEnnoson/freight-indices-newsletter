@@ -1,11 +1,11 @@
 name: Generate Freight Indices Plots
 
 on:
-  # Startet nach einem erfolgreichen, planmäßigen Scraper-Lauf
+  # Runs after a successful scheduled scraper run
   workflow_run:
     workflows: ["Weekly Freight Indices Scraper"]
     types: [completed]
-  workflow_dispatch:  # Ermöglicht manuelles Auslösen
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   generate-plots:
@@ -22,7 +22,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        ref: main  # Enthält die gerade vom Scraper committeten CSVs
+        ref: main  # Includes the CSVs just committed by the scraper
     
     - name: Set up Python
       uses: actions/setup-python@v5

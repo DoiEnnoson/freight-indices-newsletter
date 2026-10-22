@@ -2,9 +2,9 @@ name: Manage Subscribers
 
 on:
   schedule:
-    # Täglich 06:17 UTC: Bestätigungsmails senden, Bestätigungen und Abmeldungen eintragen
+    # Daily 06:17 UTC: send confirmation emails, record confirmations and unsubscribes
     - cron: '17 6 * * *'
-  workflow_dispatch:  # Ermöglicht manuelles Auslösen
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   manage-subscribers:
