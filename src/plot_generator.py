@@ -72,11 +72,11 @@ def style_chart(fig, ax, title, source):
     plt.tight_layout(rect=[0, 0.03, 1, 1])
 
 
-def mark_last_value(ax, df, color, label='', side='above', x_col='Date', date_format='%d %b %Y'):
+def mark_last_value(ax, df, color, label='', side='above', x_col='Date', date_format='%d %b %Y', dot_color=COLOR_SCFI):
     """Highlight the latest data point with a dot and its value ('above' or 'right' of the dot)."""
     last_date = df[x_col].iloc[-1]
     last_value = df['Value'].iloc[-1]
-    ax.scatter([last_date], [last_value], color=COLOR_SCFI, edgecolor=color, s=60, zorder=3)
+    ax.scatter([last_date], [last_value], color=dot_color, edgecolor=color, s=60, zorder=3)
     if side == 'right':
         offset, ha, va = (10, 0), 'left', 'center'
     else:
@@ -150,7 +150,7 @@ def create_wci_scfi_chart():
     last_week = weeks.index.max()
     first_week = weeks.index.min()
     ax.set_xlim(left=first_week - pd.Timedelta(days=7), right=last_week + (last_week - first_week) * 0.12)
-    mark_last_value(ax, wci_df, COLOR_WCI, 'WCI ', side='right', x_col='Week', date_format='W%V')
+    mark_last_value(ax, wci_df, COLOR_WCI, 'WCI ', side='right', x_col='Week', date_format='W%V', dot_color=COLOR_WCI)
     mark_last_value(ax, scfi_df, COLOR_SCFI, 'SCFI ', side='right', x_col='Week', date_format='W%V')
     
     style_chart(fig, ax, 'WCI vs. SCFI since January 2025', 'Drewry, Shanghai Shipping Exchange')
