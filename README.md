@@ -431,6 +431,12 @@ Note: Git history before October 2026 still contains the former `subscribers.csv
 - New setup: only the scraper is triggered, externally by cron-job.org on Fridays 15:47 Beijing time (shortly after the SCFI publication at about 15:00); charts and newsletter follow via `workflow_run` and only after success
 - Manual scraper runs no longer trigger a newsletter
 
+**Charts**
+- New compact chart style for newsletter and signup page: left-aligned title, dollar axis, light grid, latest value marked with a dot in the line color, direct labels instead of a legend
+- WCI vs. SCFI aligned by calendar week (WCI Thursday, SCFI Friday), week-number axis, green shading below SCFI and blue shading between SCFI and WCI
+- Images reduced from 4200 px to 1600 px width
+- Signup page shows a WCI chart of the last 12 months (`docs/wci_chart.png`), regenerated on every plot run
+
 **Other**
 - Scraper warning recipient moved from the code to the optional secret `ALERT_EMAIL`
 - All public texts (signup page, privacy notice, confirmation email) in English
