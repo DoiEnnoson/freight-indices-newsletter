@@ -26,8 +26,8 @@ WCI_CSV = os.path.join(DATA_DIR, "wci.csv")
 IACI_CSV = os.path.join(DATA_DIR, "iaci.csv")
 SCFI_CSV = os.path.join(DATA_DIR, "scfi.csv")
 
-# Warning email recipient
-WARNING_EMAIL = "hadobrockmeyer@gmail.com"
+# Warning email recipient (secret ALERT_EMAIL, falls back to the sending mailbox)
+WARNING_EMAIL = os.getenv("ALERT_EMAIL")
 
 
 def parse_email_config():
@@ -65,7 +65,7 @@ def send_warning_email(subject, message):
         )
         msg["Subject"] = f"⚠️ Freight Indices Warning: {subject}"
         msg["From"] = config["email"]
-        msg["To"] = WARNING_EMAIL
+        msg["To"] = WARNING_EMAIL or config["email"]
         
         with smtplib.SMTP(config["smtp_server"], config["smtp_port"]) as server:
             server.starttls()

@@ -19,6 +19,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import logging
 
+from subscriber_manager import get_confirmed_emails
+
 # Logging
 logging.basicConfig(
     level=logging.INFO,
@@ -34,7 +36,6 @@ CHART_WCI_SCFI = OUTPUT_DIR / 'wci_scfi' / 'wci_scfi_chart.png'
 CHART_IACI = OUTPUT_DIR / 'iaci' / 'iaci_chart.png'
 HTML_TEMPLATE = BASE_DIR / 'html_template.html'
 OUTPUT_HTML = BASE_DIR / 'newsletter.html'
-SUBSCRIBERS_CSV = BASE_DIR / 'subscribers.csv'
 
 # Threshold for change direction
 THRESHOLD_NEUTRAL = 1.0  # ±1.0% = stable
@@ -57,34 +58,6 @@ def parse_email_config():
         "smtp_server": parts[2],
         "smtp_port": int(parts[3])
     }
-
-
-def load_subscribers():
-    """Load subscriber email addresses from CSV."""
-    if not SUBSCRIBERS_CSV.exists():
-        logger.warning(f"⚠️ Subscribers file not found: {SUBSCRIBERS_CSV}")
-        logger.warning("⚠️ Create subscribers.csv with 'email' column")
-        return []
-    
-    try:
-        df = pd.read_csv(SUBSCRIBERS_CSV)
-        
-        if 'email' not in df.columns:
-            logger.error("❌ subscribers.csv must have 'email' column")
-            return []
-        
-        # Remove empty emails and duplicates
-        emails = df['email'].dropna().str.strip().unique().tolist()
-        
-        logger.info(f"✅ Loaded {len(emails)} subscriber(s)")
-        for email in emails:
-            logger.info(f"   📧 {email}")
-        
-        return emails
-        
-    except Exception as e:
-        logger.error(f"❌ Error loading subscribers: {str(e)}")
-        return []
 
 
 def load_index_data(csv_file):
@@ -238,11 +211,11 @@ def send_newsletter():
     """Send newsletter via email to all subscribers."""
     logger.info("📧 Preparing to send newsletter")
     
-    # Load subscribers
-    subscribers = load_subscribers()
+    # Load confirmed subscribers from the subscriber sheet
+    subscribers = get_confirmed_emails()
     
     if not subscribers:
-        logger.error("❌ No subscribers found, aborting")
+        logger.warning("⚠️ No confirmed subscribers, nothing to send")
         return False
     
     # Generate HTML
@@ -281,6 +254,7 @@ def send_newsletter():
                     msg['Subject'] = f"Weekly Freight Indices Newsletter - {datetime.now().strftime('%B %d, %Y')}"
                     msg['From'] = config['email']
                     msg['To'] = subscriber_email
+                    msg['List-Unsubscribe'] = f"<mailto:{config['email']}?subject=Unsubscribe>"
                     
                     # Attach HTML
                     msg_html = MIMEText(html_content, 'html', 'utf-8')
@@ -297,11 +271,11 @@ def send_newsletter():
                     
                     # Send
                     server.send_message(msg)
-                    logger.info(f"  ✅ Sent to {subscriber_email}")
+                    logger.info(f"  ✅ Sent to subscriber {success_count + fail_count + 1}")
                     success_count += 1
                     
                 except Exception as e:
-                    logger.error(f"  ❌ Failed to send to {subscriber_email}: {str(e)}")
+                    logger.error(f"  ❌ Failed to send to subscriber {success_count + fail_count + 1}: {type(e).__name__}")
                     fail_count += 1
         
         logger.info("=" * 80)

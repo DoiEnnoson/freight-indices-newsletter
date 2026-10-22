@@ -1,18 +1,24 @@
 name: Send Weekly Newsletter
 
 on:
-  schedule:
-    # Jeden Freitag um 15:00 deutscher Zeit (13:00 UTC im Winter, 14:00 UTC im Sommer)
-    - cron: '0 13 * * 5'
+  # Startet nach einem erfolgreichen Chart-Lauf, der selbst vom Scraper ausgelöst wurde
+  workflow_run:
+    workflows: ["Generate Freight Indices Plots"]
+    types: [completed]
   workflow_dispatch:  # Ermöglicht manuelles Auslösen
 
 jobs:
   send-newsletter:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'workflow_run')
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: main  # Enthält die gerade committeten Charts
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -24,7 +30,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Process signups and unsubscribes
+      env:
+        EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
+        GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+      run: python src/subscriber_manager.py
+    
     - name: Send newsletter
       env:
         EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
+        GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
       run: python src/newsletter_generator.py

@@ -63,21 +63,21 @@ This project automatically:
 │                   GITHUB ACTIONS                        │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  Friday 13:00 CET  →  Scraper                          │
+│  Fri 07:33 UTC     →  Scraper                          │
 │                       ├─ WCI Email (Drewry)            │
 │                       ├─ IACI Email (Drewry)           │
 │                       └─ SCFI API (SSE)                │
 │                       ↓                                 │
 │                    CSV Files Updated                    │
 │                       ↓                                 │
-│  Friday 14:30 CET  →  Plot Generator                   │
+│  on success        →  Plot Generator                   │
 │                       ├─ WCI/SCFI Chart                │
 │                       └─ IACI Chart                     │
 │                       ↓                                 │
 │                    PNG Files Created                    │
 │                       ↓                                 │
-│  Friday 15:00 CET  →  Newsletter Generator             │
-│                       ├─ Load Subscriber List           │
+│  on success        →  Newsletter Generator             │
+│                       ├─ Load Subscribers (Sheet)       │
 │                       ├─ Generate HTML                  │
 │                       └─ Send Emails                    │
 │                                                         │
@@ -127,14 +127,10 @@ cd freight-indices-newsletter
 
 ### Step 4: Add Subscribers
 
-Edit `subscribers.csv` in the repository root:
+Subscribers sign up themselves via the signup page (see [Subscriber Management](#subscriber-management)). Required secrets in addition to `EMAIL_CONFIG`:
 
-```csv
-email
-your-email@gmail.com
-colleague@company.com
-friend@example.com
-```
+- `GOOGLE_SERVICE_ACCOUNT`: JSON key of a Google service account with editor access to the subscriber sheet
+- `ALERT_EMAIL` (optional): recipient of scraper warnings, defaults to the sending mailbox
 
 ### Step 5: Initialize Data Files
 
@@ -186,19 +182,21 @@ doisnews@gmail.com:abcd1234efgh5678:smtp.gmail.com:587
 
 ### Subscriber Management
 
-Edit `subscribers.csv` to add/remove recipients:
+Subscribers are stored in a **private Google Sheet**, never in this public repository. Actions logs never contain subscriber addresses.
 
-```csv
-email
-person1@example.com
-person2@company.org
-```
+**Flow (double opt-in):**
+1. Signup page (`docs/`, served via GitHub Pages) links to a Google Form (email + consent)
+2. The form writes into the Google Sheet (`Timestamp`, `Email Address`, `Consent`)
+3. `src/subscriber_manager.py` runs daily (`manage_subscribers.yml`) and before each newsletter:
+   - sends a confirmation email with a token `[FIN-xxxxxxxx]` in the subject to new entries
+   - confirms entries whose owner replied to that email
+   - unsubscribes senders of emails with `Unsubscribe` in the subject
+   - deletes unconfirmed entries after 30 days and unsubscribed entries after 3 years
+4. The newsletter is sent only to entries with status `confirmed`
 
-**Rules:**
-- One email per line
-- Duplicates are automatically removed
-- Empty lines are ignored
-- No additional columns needed
+**Managed columns** (added automatically, do not rename): `Status` (`pending`, `confirmed`, `unsubscribed`), `Token`, `ConfirmationSentUTC`, `ConfirmedUTC`, `UnsubscribedUTC`.
+
+**Manual changes:** set `Status` to `unsubscribed` to stop sending to someone; delete the row to erase their data.
 
 ### Chart Customization
 
@@ -256,29 +254,19 @@ Edit `html_template.html` to customize the newsletter design:
 
 ## ⏰ Automation Schedule
 
-All times in **Central European Time (CET/CEST)**:
+Only the scraper has a fixed schedule. The SSE publishes the SCFI on Fridays around 15:00 Beijing time; the scraper runs 30 minutes later. Charts and newsletter are chained via `workflow_run`, so they always run on fresh data and stop if a previous step fails.
 
-| Time | Workflow | Action | Duration |
-|------|----------|--------|----------|
-| **13:00** | Scraper | Fetch WCI, IACI, SCFI data | ~2 min |
-| **14:30** | Plot Generator | Create charts from CSV data | ~1 min |
-| **15:00** | Newsletter | Generate and send emails | ~2 min |
+| Trigger | Workflow | Action |
+|---------|----------|--------|
+| **Fri 07:33 UTC** (15:33 BJT, 08:33 CET / 09:33 CEST) | Scraper | Fetch WCI, IACI, SCFI data |
+| after successful scheduled scraper run | Plot Generator | Create charts from CSV data |
+| after successful chained plot run | Newsletter | Process signups, send emails |
+| **daily 06:17 UTC** | Manage Subscribers | Confirmations and unsubscribes |
 
-**Cron Schedule (GitHub Actions uses UTC):**
-
-```yaml
-# Scraper - 13:00 CET (11:00 UTC winter, 12:00 UTC summer)
-- cron: '0 11 * * 5'
-
-# Plot Generator - 14:30 CET (12:30 UTC winter, 13:30 UTC summer)
-- cron: '30 12 * * 5'
-
-# Newsletter - 15:00 CET (13:00 UTC winter, 14:00 UTC summer)
-- cron: '0 13 * * 5'
-```
+GitHub often starts scheduled runs with a delay of several hours.
 
 **Manual Trigger:**
-All workflows can be triggered manually via **Actions** → **Workflow name** → **Run workflow**
+All workflows can be triggered manually via **Actions** → **Workflow name** → **Run workflow**. A manual scraper run does not trigger charts and newsletter.
 
 ---
 
@@ -309,7 +297,7 @@ freight-indices-newsletter/
 │       └── iaci_chart.png             # IACI chart
 │
 ├── html_template.html                  # Newsletter HTML template
-├── subscribers.csv                     # Email recipient list
+├── docs/                               # Signup page and privacy notice (GitHub Pages)
 ├── requirements.txt                    # Python dependencies
 ├── README.md                           # This file
 └── newsletter.html                     # Generated newsletter (auto-created)
@@ -360,9 +348,9 @@ freight-indices-newsletter/
 
 #### Problem: "No subscribers found"
 **Solution:**
-1. Check `subscribers.csv` exists in repository root
-2. Verify CSV has `email` column header
-3. Ensure at least one valid email address is present
+1. Check that at least one row in the subscriber sheet has `Status` = `confirmed`
+2. Verify the sheet is shared with the service account as editor
+3. Verify the `GOOGLE_SERVICE_ACCOUNT` secret contains the complete JSON key
 
 #### Problem: "Newsletter sent but images missing"
 **Solution:**

@@ -2,8 +2,9 @@ name: Weekly Freight Indices Scraper
 
 on:
   schedule:
-    # Jeden Freitag um 13:00 deutscher Zeit (12:00 UTC im Winter, 13:00 UTC im Sommer)
-    - cron: '0 12 * * 5'
+    # Freitags 07:33 UTC = 15:33 Pekinger Zeit, 30 Minuten nach Veröffentlichung des SCFI
+    # (08:33 MEZ / 09:33 MESZ). Charts und Versand laufen danach automatisch per workflow_run.
+    - cron: '33 7 * * 5'
   workflow_dispatch:  # Ermöglicht manuelles Auslösen
 
 jobs:
@@ -32,6 +33,7 @@ jobs:
     - name: Run scraper
       env:
         EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
+        ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
       run: python src/scraper.py
     
     - name: Commit and push updated CSV files

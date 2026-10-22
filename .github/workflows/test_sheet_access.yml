@@ -1,5 +1,6 @@
 name: Test Sheet Access
 
+# Temporary: runs the subscriber manager from this branch. Remove before merging.
 on:
   push:
     branches: [subscriber-signup]
@@ -9,23 +10,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    - run: pip install gspread==6.1.2 google-auth==2.35.0
-    - name: Read subscriber sheet (counts only, no addresses)
+    - run: pip install -r requirements.txt
+    - name: Process signups and unsubscribes
       env:
+        EMAIL_CONFIG: ${{ secrets.EMAIL_CONFIG }}
         GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-      run: |
-        python - <<'PY'
-        import json, os, gspread
-        info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT"])
-        print("Service account:", info.get("client_email"))
-        gc = gspread.service_account_from_dict(info)
-        sh = gc.open_by_key("1ZOS8FMWxDX9EjS7R47MNV8YkdTp5SIIxY563-POBLao")
-        ws = sh.sheet1
-        rows = ws.get_all_values()
-        print("Spreadsheet:", sh.title, "| Worksheet:", ws.title)
-        print("Headers:", rows[0] if rows else None)
-        print("Data rows:", max(len(rows) - 1, 0))
-        PY
+      run: python src/subscriber_manager.py
