@@ -213,16 +213,18 @@ def send_newsletter():
     
     # Load confirmed subscribers from the subscriber sheet
     subscribers = get_confirmed_emails()
-    
     if not subscribers:
-        logger.warning("⚠️ No confirmed subscribers, nothing to send")
-        return False
-    
-    # Generate HTML
-    html_file = generate_newsletter_html()
+        logger.warning("⚠️ No confirmed subscribers")
     
     # Parse email config
     config = parse_email_config()
+    
+    # The sending mailbox always gets a copy, as archive and as proof that sending works
+    if config['email'].lower() not in subscribers:
+        subscribers.append(config['email'].lower())
+    
+    # Generate HTML
+    html_file = generate_newsletter_html()
     
     # Read HTML content
     with open(html_file, 'r', encoding='utf-8') as f:
@@ -284,7 +286,7 @@ def send_newsletter():
         logger.info(f"   Failed: {fail_count}")
         logger.info("=" * 80)
         
-        return success_count > 0
+        return success_count > 0 and fail_count == 0
         
     except Exception as e:
         logger.error(f"❌ Failed to connect to SMTP server: {str(e)}")
@@ -293,7 +295,9 @@ def send_newsletter():
 
 if __name__ == "__main__":
     try:
-        send_newsletter()
+        if not send_newsletter():
+            logger.error("❌ Newsletter was not sent to all recipients")
+            exit(1)
     except Exception as e:
         logger.error(f"❌ Error: {str(e)}")
         exit(1)
