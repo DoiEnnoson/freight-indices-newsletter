@@ -163,7 +163,7 @@ def extract_wci_from_html(html_content, subject):
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text(strip=True)
         
-        wci_match = re.search(r'\(WCI\)[^$]*\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
+        wci_match = re.search(r'\(WCI\)[^.]*?\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
         if not wci_match:
             logger.error("❌ DEBUG - extract_wci_from_html: Could not extract WCI value")
             return None, None
@@ -279,7 +279,7 @@ def extract_iaci_from_html(html_content, subject):
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text(strip=True)
         
-        iaci_match = re.search(r'\(IACI\)[^$]*\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
+        iaci_match = re.search(r'\(IACI\)[^.]*?\$(\d{1,3}(?:,\d{3})*)\s*per 40ft container', text)
         if not iaci_match:
             logger.error("❌ DEBUG - extract_iaci_from_html: Could not extract IACI value")
             return None, None

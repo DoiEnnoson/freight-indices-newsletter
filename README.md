@@ -416,6 +416,10 @@ Note: Git history before October 2026 still contains the former `subscribers.csv
 
 ## 📝 Changelog
 
+### 2.0.1 (October 2026)
+- Fixed WCI/IACI extraction when Drewry states the weekly change in dollars ("increased $46 to $1,504 per 40ft container"); the old pattern stopped at the first dollar amount. IACI value of 29.10.2026 added manually
+- Newsletter always sends a copy to the `EMAIL_CONFIG` mailbox; the run fails if any recipient could not be sent to
+
 ### 2.0.0 (October 2026)
 
 **Subscription management**
